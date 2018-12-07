@@ -3,7 +3,10 @@ from datetime import datetime
 import pandas as pd
 _map = map
 
-from ..colour import colour
+try:
+	from slytherin.colour import colour
+except:
+	from .colour import colour
 
 
 
