@@ -65,4 +65,9 @@ data['name_and_ethnicity'] = ProgressBar.apply(
     data=data, 
     function=lambda x: x['name']+' the '+x['ethnicity']
 )
+
+data['name_lower'] = ProgressBar.apply(
+    series=data['name'], 
+    function=lambda x: x.lower()
+)
 ```
