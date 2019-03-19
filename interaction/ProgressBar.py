@@ -40,6 +40,7 @@ class ProgressBar:
 		self._next_line = next_line
 		self._completed = False
 		self._max_length = 0
+		self._max_length_with_colour = 0
 
 	@property
 	def animation(self):
@@ -166,10 +167,13 @@ class ProgressBar:
 
 			string += ' ' + colour(text=text, text_colour=self._text_colour)
 			length += 1 + len(text)
+			length_with_colour = len(string)
+			if self._max_length_with_colour < length_with_colour:
+				self._max_length_with_colour = length_with_colour
 
 			if self._max_length < length:
 				self._max_length = length
-			padding = ' '*(self._max_length-length)
+			padding = ' '*max(self._max_length - length, self._max_length_with_colour - length_with_colour)
 			self.write(string=string + padding)
 		except Exception as e:
 			self.write(string=f'progress bar error: {e}')
