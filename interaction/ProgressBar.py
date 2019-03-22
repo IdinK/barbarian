@@ -5,13 +5,14 @@ _map = map
 
 try:
 	from slytherin.colour import colour
-except:
+except ModuleNotFoundError:
 	from .colour import colour
+
 
 class ProgressBar:
 	def __init__(
-			self, total, bar_length = 20, bar_full = '▓', bar_empty = '▒', animation='clock',
-			full_colour='blue', empty_colour='grey', text_colour='grey', next_line = True
+			self, total, bar_length=20, bar_full='▓', bar_empty='▒', animation='clock',
+			full_colour='blue', empty_colour='grey', text_colour='grey', next_line=True
 	):
 		self._total = total
 		self._bar_length = bar_length
@@ -41,6 +42,7 @@ class ProgressBar:
 		self._completed = False
 		self._max_length = 0
 		self._max_length_with_colour = 0
+		self._max_lengths = {'animation': 0, 'elapsed': 0, 'remaining': 0, 'text': 0, 'percent': 0, 'with_colour': 0}
 
 	@property
 	def animation(self):
@@ -75,16 +77,20 @@ class ProgressBar:
 		delta_seconds = self.get_elapsed_seconds()
 
 		try:
-			speed = amount/delta_seconds
-		except:
+			speed = amount / delta_seconds
+		except ZeroDivisionError:
 			speed = None
-		if amount>=self._total:
+
+		if amount >= self._total:
 			return 0
+
 		else:
 			try:
 				the_time = (self._total - amount) / speed
-			except:
+
+			except ZeroDivisionError:
 				the_time = None
+
 			return the_time
 
 	@staticmethod
@@ -119,7 +125,7 @@ class ProgressBar:
 		empty_part_len = self._bar_length - full_part_len
 
 		if self._full_colour is not None:
-			character = '▅' # character = self._bar_empty
+			character = '▅'  # character = self._bar_empty
 			full_part = colour(text=character * full_part_len, text_colour=self._full_colour)
 			empty_part = colour(text=character * empty_part_len, text_colour=self._empty_colour)
 		else:
@@ -128,11 +134,43 @@ class ProgressBar:
 
 		return full_part + empty_part
 
-	def write(self, string):
+	@staticmethod
+	def write(string):
 		"""
 		:type string: str
 		"""
 		stdout.write('\r'+string)
+
+	def _get_animation_string(self):
+		animation = self.animation
+		self._max_lengths['animation'] = max(self._max_lengths['animation'], len(animation))
+		return colour(text=animation.ljust(self._max_lengths['animation']), text_colour=self._empty_colour)
+
+	def _get_elapsed_time_string(self):
+		elapsed = self.get_elapsed_seconds()
+		elapsed_text = f'e:{self.format_time(elapsed)} '
+		self._max_lengths['elapsed'] = max(self._max_lengths['elapsed'], len(elapsed_text))
+		elapsed_text = elapsed_text.ljust(self._max_lengths['elapsed'])
+		return colour(text=elapsed_text, text_colour=self._full_colour)
+
+	def _get_remaining_time_string(self, amount):
+		remaining = self.get_remaining_seconds(amount=amount)
+		remaining_text = f'r:{self.format_time(remaining)} '
+		self._max_lengths['remaining'] = max(self._max_lengths['remaining'], len(remaining_text))
+		remaining_text = remaining_text.ljust(self._max_lengths['remaining'])
+		return colour(text=remaining_text, text_colour=self._empty_colour)
+
+	def _get_percent_string(self, amount):
+		percent_text = f' {self.format_percent(amount=amount)}'
+		self._max_lengths['percent'] = max(self._max_lengths['percent'], len(percent_text))
+		percent_text = percent_text.rjust(self._max_lengths['percent'])
+		return colour(text=percent_text, text_colour=self._full_colour)
+
+	def _get_text_string(self, text):
+		text_text = f' {text}'
+		self._max_lengths['text'] = max(self._max_lengths['text'], len(text_text))
+		text_text = text_text.ljust(self._max_lengths['text'])
+		return colour(text=text_text, text_colour=self._text_colour)
 
 	def show(self, amount, percent=True, bar=True, time=True, text=''):
 		"""
@@ -144,72 +182,68 @@ class ProgressBar:
 		"""
 		try:
 			string = ''
-			length = 0
-			animation = self.animation; length += len(animation)
-			string += colour(text=animation, text_colour=self._empty_colour)
+			string += self._get_animation_string()
+
 			if time:
-				remaining = self.get_remaining_seconds(amount=amount)
-				elapsed = self.get_elapsed_seconds()
-				elapsed_text = f'e:{self.format_time(elapsed)} '.ljust(10)
-				remaining_text = f'r:{self.format_time(remaining)} '.ljust(10)
-				string += colour(text=elapsed_text, text_colour=self._full_colour)
-				string += colour(text=remaining_text, text_colour=self._empty_colour)
-				length += len(elapsed_text) + len(remaining_text)
+				string += self._get_elapsed_time_string()
+				string += self._get_remaining_time_string(amount=amount)
 
 			if bar:
-				bar_coloured = self.format_bar(amount=amount)
-				string += bar_coloured
-				length += self._bar_length
+				string += self.format_bar(amount=amount)
+
 			if percent:
-				percent_text = (' ' + self.format_percent(amount=amount)).rjust(8)
-				string += colour(text=percent_text, text_colour=self._full_colour)
-				length += len(percent_text)
+				string += self._get_percent_string(amount=amount)
 
-			string += ' ' + colour(text=text, text_colour=self._text_colour)
-			length += 1 + len(text)
-			length_with_colour = len(string)
-			if self._max_length_with_colour < length_with_colour:
-				self._max_length_with_colour = length_with_colour
+			string += self._get_text_string(text=text)
+			self._max_lengths['with_colour'] = max(self._max_lengths['with_colour'], len(string))
+			string = string.ljust(self._max_lengths['with_colour'])
+			self.write(string=string)
 
-			if self._max_length < length:
-				self._max_length = length
-			padding = ' '*max(self._max_length - length, self._max_length_with_colour - length_with_colour)
-			self.write(string=string + padding)
 		except Exception as e:
 			self.write(string=f'progress bar error: {e}')
 
-
 		stdout.flush()
-		if amount == self._total: self.complete()
+		if amount == self._total:
+			self.complete()
+
 		if self._next_line and self._completed:
 			print('')
 
-
 	@classmethod
 	def map(
-			cls,function, iterable, progress_step=None, percent=True, bar=True, time=True, text='', echo=1,
-			next_line = True, iterable_text=None,
+			cls, function, iterable, progress_step=None, percent=True, bar=True, time=True, text='', echo=1,
+			next_line=True, iterable_text=None,
 			**kwargs
 	):
 		echo = max(0, echo)
+
 		def _func(x, _progress, _progress_bar, _text=''):
 			if progress['amount'] == 0:
-				progress_bar.show(amount=progress['amount'], percent=percent, bar=bar, time=time, text=text+_text)
-			result = function(x)
+				progress_bar.show(
+					amount=progress['amount'], percent=percent, bar=bar, time=time, text=text + _text
+				)
+
+			function_result = function(x)
+
 			_progress['amount'] += 1
 			if _progress['max_step'] > 1:
 				if _progress['amount'] % _progress['step'] == 0 or _progress['amount'] >= total:
-					_progress_bar.show(amount=_progress['amount'], percent=percent, bar=bar, time=time, text=text+_text)
+					_progress_bar.show(
+						amount=_progress['amount'], percent=percent, bar=bar, time=time, text=text + _text
+					)
 					_progress['step'] = min(_progress['step'] * 2, _progress['max_step'])
 			else:
-				_progress_bar.show(amount=_progress['amount'], percent=percent, bar=bar, time=time, text=text+_text)
-			return result
+				_progress_bar.show(amount=_progress['amount'], percent=percent, bar=bar, time=time, text=text + _text)
+
+			return function_result
 
 		total = len(iterable)
 		if progress_step is None:
 			progress_step = max(round(total / 10), 1)  # we don't want progress step to be 0
+
 		progress = {'amount': 0, 'step': 1, 'max_step': progress_step}
 		progress_bar = cls(total=total, next_line=next_line, **kwargs)
+
 		if echo:
 			if iterable_text is None:
 				result = _map(
@@ -247,18 +281,23 @@ class ProgressBar:
 		"""
 		echo = max(0, echo)
 		# either data or series should be provided:
-		if data is None and series is None: raise ValueError('either data or series should be provided')
-		if data is not None and series is not None: raise ValueError('both data and series cannot be provided')
-		def _func(x, progress, progress_bar):
-			result = function(x)
-			progress['amount'] += 1
-			if progress['max_step'] > 1:
-				if progress['amount'] % progress['step'] == 0 or progress['amount'] >= total:
-					progress_bar.show(amount=progress['amount'], percent=percent, bar=bar, time=time, text=text)
-					progress['step'] = min(progress['step'] * 2, progress['max_step'])
+		if data is None and series is None:
+			raise ValueError('either data or series should be provided')
+
+		if data is not None and series is not None:
+			raise ValueError('both data and series cannot be provided')
+
+		def _func(x, _progress, _progress_bar):
+			function_result = function(x)
+			_progress['amount'] += 1
+			if _progress['max_step'] > 1:
+				if _progress['amount'] % _progress['step'] == 0 or _progress['amount'] >= total:
+					_progress_bar.show(amount=_progress['amount'], percent=percent, bar=bar, time=time, text=text)
+					_progress['step'] = min(_progress['step'] * 2, _progress['max_step'])
 			else:
-				progress_bar.show(amount=progress['amount'], percent=percent, bar=bar, time=time, text=text)
-			return result
+				_progress_bar.show(amount=_progress['amount'], percent=percent, bar=bar, time=time, text=text)
+			return function_result
+
 		if data is not None:
 			if axis == 1:
 				total = data.shape[0]
@@ -277,23 +316,12 @@ class ProgressBar:
 		if echo:
 			progress_bar.show(amount=0, percent=percent, bar=bar, time=time, text=text)
 			if data is not None:
-				result = data.apply(func=lambda x: _func(x=x, progress=progress, progress_bar=progress_bar), axis=axis)
+				result = data.apply(func=lambda x: _func(x=x, _progress=progress, _progress_bar=progress_bar), axis=axis)
 			else:
-				result = series.apply(func=lambda x: _func(x=x, progress=progress, progress_bar=progress_bar))
+				result = series.apply(func=lambda x: _func(x=x, _progress=progress, _progress_bar=progress_bar))
 			return result
 		else:
 			if data is not None:
 				return data.apply(func=function, axis=axis)
 			else:
 				return series.apply(func=function)
-
-
-Progress = ProgressBar
-
-
-
-
-
-
-
-

@@ -8,7 +8,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
 	name='interaction',
-	version='1.03',
+	version='1.0.4',
 	description='Python library for creating progress bars',
 	long_description=long_description,
 	long_description_content_type='text/markdown',
@@ -17,7 +17,7 @@ setup(
 	author_email='py@idin.ca',
 	license='MIT',
 	packages=find_packages(exclude=("jupyter_tests", ".idea", ".git")),
-	install_requires=[],
+	install_requires=['pandas'],
 	python_requires='~=3.6',
 	zip_safe=False
 )
