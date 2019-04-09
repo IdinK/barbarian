@@ -10,11 +10,17 @@ class Iterable:
 		:type echo: bool
 		"""
 		self._idx = 0
-		self._inner = inner
+		try:
+			self._total = len(inner)
+			self._inner = inner
+		except TypeError:
+			self._inner = list(inner)
+			self._total = len(self._inner)
 		self._text = text
 		self._echo = echo
+
 		if progress_bar is None:
-			self._progress_bar = ProgressBar(total=len(self._inner))
+			self._progress_bar = ProgressBar(total=self._total)
 		else:
 			self._progress_bar = progress_bar
 			self._progress_bar._total = len(self._inner)
