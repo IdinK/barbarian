@@ -60,7 +60,10 @@ class ProgressBar:
 		return self._completed
 
 	def get_percent(self, amount):
-		return amount / self._total * 100
+		try:
+			return amount / self._total * 100
+		except ZeroDivisionError:
+			return 0
 
 	def format_percent(self, amount):
 		amount = min(amount, self._total)
@@ -154,7 +157,7 @@ class ProgressBar:
 		return colour(text=elapsed_text, text_colour=self._full_colour)
 
 	def _get_remaining_time_string(self, amount):
-		remaining = self.get_remaining_seconds(amount=amount)
+		remaining = self.get_remaining_seconds(amount=amount)  # if remaining is None get_remaining_seconds takes care of it
 		remaining_text = f'r:{self.format_time(remaining)} '
 		self._max_lengths['remaining'] = max(self._max_lengths['remaining'], len(remaining_text))
 		remaining_text = remaining_text.ljust(self._max_lengths['remaining'])
