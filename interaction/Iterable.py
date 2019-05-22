@@ -40,5 +40,5 @@ class Iterable:
 
 
 def iterate(iterable, progress_bar=None, text='', echo=True):
-	return Iterable(inner=iterable, progress_bar=progress_bar, text=text, echo=echo)
+	return Iterable(inner=list(iterable), progress_bar=progress_bar, text=text, echo=echo)
 
