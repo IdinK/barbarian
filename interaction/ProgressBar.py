@@ -88,13 +88,10 @@ class ProgressBar:
 			return 0
 
 		else:
-			try:
-				the_time = (self._total - amount) / speed
-
-			except ZeroDivisionError:
-				the_time = None
-
-			return the_time
+			if speed == 0 or speed is None:
+				return None
+			else:
+				return (self._total - amount) / speed
 
 	@staticmethod
 	def format_time(time):
@@ -204,6 +201,7 @@ class ProgressBar:
 
 		except Exception as e:
 			self.write(string=f'progress bar error: {e}')
+			raise e
 
 		stdout.flush()
 		if amount == self._total:
@@ -242,7 +240,7 @@ class ProgressBar:
 
 		total = len(iterable)
 		if progress_step is None:
-			progress_step = max(round(total / 10), 1)  # we don't want progress step to be 0
+			progress_step = max(round(total / 100), 1)  # we don't want progress step to be 0
 
 		progress = {'amount': 0, 'step': 1, 'max_step': progress_step}
 		progress_bar = cls(total=total, next_line=next_line, **kwargs)
