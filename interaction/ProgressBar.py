@@ -276,7 +276,7 @@ class ProgressBar:
 		:type time: bool
 		:type text: str
 		:type axis: int
-		:type echo: bool
+		:type echo: bool or int
 		:type next_line: bool
 		:rtype: pd.DataFrame or pd.Series
 		"""
