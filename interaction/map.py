@@ -3,7 +3,7 @@ from .ProgressBar import ProgressBar
 _map = map
 
 
-def map(function, iterable, progress_step=None, percent=True, bar=True, time=True, text=''):
+def map(function, iterable, percent=True, bar=True, time=True, text=''):
 	"""
 	:type function: function
 	:type iterable: iterable
@@ -20,14 +20,12 @@ def map(function, iterable, progress_step=None, percent=True, bar=True, time=Tru
 		if _progress['max_step']>1:
 			if _progress['amount'] % _progress['step']==0 or _progress['amount']>=total:
 				_progress_bar.show(amount=_progress['amount'], percent=percent, bar=bar, time=time, text=text)
-				_progress['step'] = min(_progress['step'] * 2, _progress['max_step'])
+
 
 		return result
 
 	total = len(iterable)
-	if progress_step is None:
-		progress_step = max(round(total/10),1) # we don't want progress step to be 0
-	progress = {'amount':0, 'step':1, 'max_step':progress_step}
+	progress = {'amount':0, 'step':1}
 	progress_bar = ProgressBar(total=total)
 
 	return _map(lambda x: _func(x=x, _progress=progress, _progress_bar=progress_bar), iterable)
@@ -51,10 +49,8 @@ def apply(function, data, progress_step=None, percent=True, bar=True, time=True,
 		"""
 		result = function(x)
 		_progress['amount'] += 1
-		if _progress['max_step']>1:
-			if _progress['amount'] % _progress['step']==0 or _progress['amount']>=total:
-				_progress_bar.show(amount=_progress['amount'], percent=percent, bar=bar, time=time, text=text)
-				_progress['step'] = min(_progress['step'] * 2, _progress['max_step'])
+		if _progress['amount'] % _progress['step']==0 or _progress['amount']>=total:
+			_progress_bar.show(amount=_progress['amount'], percent=percent, bar=bar, time=time, text=text)
 		return result
 	total = data.shape[0]
 	if progress_step is None:

@@ -17,7 +17,7 @@ setup(
 	author_email='py@idin.ca',
 	license='MIT',
 	packages=find_packages(exclude=("jupyter_tests", ".idea", ".git")),
-	install_requires=['pandas'],
+	install_requires=['pandas', 'slytherin'],
 	python_requires='~=3.6',
 	zip_safe=False
 )
